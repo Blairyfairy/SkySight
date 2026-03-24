@@ -185,7 +185,7 @@ function flicker(){logoPath.setAttribute("fill","#f87171"); setTimeout(()=>logoP
 logoLink.addEventListener("mouseenter",flicker);
 
 // === MAP SETUP ===
-const map=L.map("map").setView([lat,lon],6);
+const map=L.map("map",{minZoom:2,maxZoom:10}).setView([lat,lon],5); // zoom out to prevent Leaflet warnings
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(map);
 
 let markers = [];
@@ -219,12 +219,17 @@ locations.forEach(loc => addMarker(loc.lat, loc.lon, loc.name));
 
 // Radar animations (RainViewer)
 let radarLayer;
-function addRadar(){
-  const now=Math.floor(Date.now()/1000/300)*300;
-  if(radarLayer) map.removeLayer(radarLayer);
-  radarLayer=L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/256/{z}/{x}/{y}/${now}/0_1.png`,{opacity:0.5}).addTo(map);
+async function addRadar(){
+  try{
+    const resp = await fetch("https://api.rainviewer.com/public/weather-maps.json");
+    const json = await resp.json();
+    const radar = json.radar[json.radar.length-1]; // latest radar frame
+    if(radarLayer) map.removeLayer(radarLayer);
+    radarLayer=L.tileLayer(`https://tilecache.rainviewer.com${radar.path}/{z}/{x}/{y}/2/1_1.png`,{opacity:0.5}).addTo(map);
+  }catch(e){console.warn("Radar load failed",e);}
 }
-addRadar(); setInterval(addRadar,300000);
+addRadar(); 
+setInterval(addRadar,300000);
 
 // === HELPERS ===
 function cToF(c){return Math.round((c*9/5)+32);}
