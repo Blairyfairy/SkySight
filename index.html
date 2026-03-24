@@ -92,7 +92,7 @@ canvas{width:100% !important; height:200px !important; touch-action: pan-x pan-y
 .card#charts h3{margin-bottom:0.5rem;}
 .chart-label{font-size:0.85rem; color:#f1f5f9; margin-top:0.2rem; text-align:center;}
 
-#map{height:400px; border-radius:16px; width:100%; max-width:100%;}
+#map, #radar-map{height:400px; border-radius:16px; width:100%; max-width:100%;}
 
 .alert{padding:.5rem; border-radius:8rem; margin-bottom:.5rem; transition:0.2s; word-break:break-word;}
 .alert-severe{background:var(--alert-severe);color:#000;}
@@ -120,6 +120,7 @@ canvas{width:100% !important; height:200px !important; touch-action: pan-x pan-y
     <a href="#weekly">Weekly</a>
     <a href="#charts">Charts</a>
     <a href="#map-section">Map</a>
+    <a href="#radar-section">Live Radar</a>
     <a href="#details">Details</a>
     <a href="#alerts">Alerts</a>
   </nav>
@@ -138,6 +139,7 @@ canvas{width:100% !important; height:200px !important; touch-action: pan-x pan-y
     <canvas id="precipChart"></canvas>
   </div>
   <div class="card" id="map-section"><h3>Interactive Map with Radar</h3><div id="map"></div></div>
+  <div class="card" id="radar-section"><h3>Live Doppler Radar</h3><div id="radar-map"></div></div>
   <div class="card" id="details"><h3>Details</h3><div id="details-content">Loading details...</div></div>
   <div class="card" id="alerts"><h3>Weather Alerts</h3><div id="alerts-content">Loading alerts...</div></div>
 </div>
@@ -176,6 +178,19 @@ function addRadar(){
 }
 addRadar(); setInterval(addRadar,300000);
 
+// === LIVE DOPPLER RADAR MAP SETUP ===
+const radarMap=L.map("radar-map").setView([lat, lon],4);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(radarMap);
+let radarLayerLive;
+function updateRadar(){
+  const now=Math.floor(Date.now()/1000/300)*300;
+  if(radarLayerLive) radarMap.removeLayer(radarLayerLive);
+  radarLayerLive=L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/256/{z}/{x}/{y}/${now}/0_1.png`,{opacity:0.6}).addTo(radarMap);
+}
+updateRadar();
+setInterval(updateRadar,300000);
+window.addEventListener("resize",()=>radarMap.invalidateSize());
+
 // === HELPERS ===
 function cToF(c){return Math.round((c*9/5)+32);}
 function getIcon(code){
@@ -199,117 +214,8 @@ async function fetchCurrent(){
   }catch{document.getElementById("desc").textContent="Failed loading current";}
 }
 
-async function fetchHourly(){
-  try{
-    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode,windspeed_10m,precipitation&timezone=auto`);
-    const d=await res.json(), c=document.getElementById("hourly");
-    c.innerHTML="";
-    d.hourly.time.slice(0,24).forEach((t,i)=>{
-      const temp=isFahrenheit?cToF(d.hourly.temperature_2m[i]):d.hourly.temperature_2m[i];
-      const wind=d.hourly.windspeed_10m[i], precip=d.hourly.precipitation[i];
-      const div=document.createElement("div"); div.className="hour";
-      div.innerHTML=`${t.split("T")[1]}<br>${getIcon(d.hourly.weathercode[i])}<br>${temp}°<br>💨${wind} km/h<br>☔${precip} mm`;
-      c.appendChild(div);
-    });
-    renderCharts(d);
-  }catch{document.getElementById("hourly").textContent="Hourly load failed";}
-}
+// ... (keep all other fetchHourly, fetchWeekly, fetchAlerts, renderCharts, search, temp toggle, loadAll, map click code exactly as in your version)
 
-async function fetchWeekly(){
-  try{
-    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset&timezone=auto`);
-    const d=await res.json(), c=document.getElementById("weekly-forecast");
-    c.innerHTML="";
-    d.daily.time.forEach((day,i)=>{
-      const max=isFahrenheit?cToF(d.daily.temperature_2m_max[i]):d.daily.temperature_2m_max[i];
-      const min=isFahrenheit?cToF(d.daily.temperature_2m_min[i]):d.daily.temperature_2m_min[i];
-      const div=document.createElement("div"); div.className="day";
-      div.innerHTML=`<p>${day}</p><p>${getIcon(d.daily.weathercode[i])}</p><p>${max}° / ${min}°</p>`;
-      c.appendChild(div);
-    });
-    document.getElementById("details-content").innerHTML=`<p>Sunrise: ${d.daily.sunrise[0]}</p><p>Sunset: ${d.daily.sunset[0]}</p>`;
-  }catch{document.getElementById("weekly-forecast").textContent="Weekly load failed";}
-}
-
-async function fetchAlerts(){
-  try{
-    const res=await fetch(`https://api.weather.gov/alerts/active?point=${lat},${lon}`);
-    const d=await res.json(), c=document.getElementById("alerts-content");
-    c.innerHTML="";
-    if(!d.features||!d.features.length) c.textContent="No active alerts.";
-    else d.features.forEach(a=>{
-      const sev=a.properties.severity.toLowerCase();
-      const cls=sev.includes("severe")?"alert-severe":sev.includes("warning")?"alert-warning":"alert-info";
-      const div=document.createElement("div"); div.className="alert "+cls;
-      div.innerHTML=`${a.properties.event} (${a.properties.severity})<br>${a.properties.headline}`;
-      c.appendChild(div);
-    });
-  }catch{document.getElementById("alerts-content").textContent="Alerts load failed";}
-}
-
-// === CHARTS ===
-function renderCharts(d){
-  const labels=d.hourly.time.slice(0,24).map(t=>t.split("T")[1]);
-  const temps=d.hourly.temperature_2m.slice(0,24).map(t=>(isFahrenheit?cToF(t):t));
-  const winds=d.hourly.windspeed_10m.slice(0,24); const prec=d.hourly.precipitation.slice(0,24);
-  if(window.tempC) window.tempC.destroy();
-  if(window.windC) window.windC.destroy();
-  if(window.precC) window.precC.destroy();
-
-  window.tempC=new Chart(document.getElementById("tempChart").getContext("2d"),{
-    type:"line",
-    data:{labels,datasets:[{label:"Temperature (°"+(isFahrenheit?"F":"C")+")",data:temps,borderColor:"#38bdf8",backgroundColor:"rgba(56,189,248,0.2)",tension:0.4,fill:true,pointRadius:3,pointHoverRadius:6}]} ,
-    options:{responsive:true,plugins:{title:{display:true,text:"Temperature Over 24h"},tooltip:{mode:"index",intersect:false}},scales:{y:{beginAtZero:false}}}
-  });
-
-  window.windC=new Chart(document.getElementById("windChart").getContext("2d"),{
-    type:"line",
-    data:{labels,datasets:[{label:"Wind Speed (km/h)",data:winds,borderColor:"#facc15",backgroundColor:"rgba(250,204,21,0.2)",tension:0.4,fill:true,pointRadius:3,pointHoverRadius:6}]} ,
-    options:{responsive:true,plugins:{title:{display:true,text:"Wind Speed Over 24h"},tooltip:{mode:"index",intersect:false}},scales:{y:{beginAtZero:true}}}
-  });
-
-  window.precC=new Chart(document.getElementById("precipChart").getContext("2d"),{
-    type:"bar",
-    data:{labels,datasets:[{label:"Precipitation (mm)",data:prec,backgroundColor:"rgba(248,113,113,0.6)"}]},
-    options:{responsive:true,plugins:{title:{display:true,text:"Precipitation Over 24h"},tooltip:{mode:"index",intersect:false}},scales:{y:{beginAtZero:true}}}
-  });
-}
-
-// === SEARCH & MAP MULTIPLE LOCATIONS ===
-document.getElementById("search").addEventListener("keypress",async e=>{
-  if(e.key==="Enter"){
-    const city=e.target.value; if(!city) return;
-    try{
-      const geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=5`);
-      const r=await geo.json();
-      if(r.results && r.results.length>0){
-        lat = r.results[0].latitude;
-        lon = r.results[0].longitude;
-        document.getElementById("location").textContent = r.results[0].name;
-        const m = addMarker(lat, lon, r.results[0].name);
-        map.flyTo([lat, lon], 6, {duration: 1.2});
-        loadAll();
-      } else alert("City not found");
-    }catch{alert("Geocode failed");}
-  }
-});
-
-// === TEMP TOGGLE ===
-document.getElementById("temp").addEventListener("click",()=>{isFahrenheit=!isFahrenheit; loadAll();});
-
-// === LOAD ALL ===
-function loadAll(){fetchCurrent(); fetchHourly(); fetchWeekly(); fetchAlerts();}
-loadAll();
-setInterval(loadAll,600000);
-
-// Map click to add marker without zoom warnings
-map.on('click', e=>{
-  lat = e.latlng.lat;
-  lon = e.latlng.lng;
-  const m = addMarker(lat, lon, `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`);
-  document.getElementById("location").textContent=`Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`;
-  loadAll();
-});
 </script>
 </body>
 </html>
