@@ -54,7 +54,7 @@ nav{display:flex; flex-wrap:wrap; gap:1rem; margin-top:0.5rem;}
 nav a{color:var(--text); text-decoration:none; font-weight:600; transition:0.3s;}
 nav a:hover{color:var(--accent1);}
 
-.search{padding:.5rem 1rem; border-radius:20px; border:none; outline:none; margin-top:0.5rem;}
+.search{padding:.5rem 1rem; border-radius:20px; border:none; outline:none; margin-top:0.5rem; max-width:200px;}
 
 #scrollTop{
   position:fixed; bottom:20px; right:20px;
@@ -68,24 +68,25 @@ nav a:hover{color:var(--accent1);}
 .card{
   background:var(--glass); border:1px solid var(--border); border-radius:16px; padding:1rem;
   backdrop-filter:blur(12px); width:100%; transition:0.3s; opacity:1; transform:translateY(0);
+  overflow-x:auto; -webkit-overflow-scrolling: touch;
 }
 
 .current{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;}
 .temp{font-size:3rem; font-weight:700; cursor:pointer;}
 
-.hourly{display:flex; gap:1rem; overflow-x:auto;}
-.hour{min-width:80px; text-align:center; transition:0.2s;}
+.hourly{display:flex; gap:1rem; overflow-x:auto; padding-bottom:0.5rem; -webkit-overflow-scrolling: touch;}
+.hour{min-width:80px; text-align:center; transition:0.2s; flex-shrink:0;}
 .hour:hover{transform:scale(1.1);}
 
 .week{display:flex; flex-direction:column; gap:.5rem;}
 .day{display:flex; justify-content:space-between; align-items:center; transition:0.2s;}
 .day:hover{background:rgba(255,255,255,0.05);border-radius:8px;padding:0.2rem;}
 
-canvas{width:100% !important; height:200px !important;}
+canvas{width:100% !important; height:200px !important; touch-action: pan-x pan-y;}
 
-#map{height:400px; border-radius:16px; width:100%;}
+#map{height:400px; border-radius:16px; width:100%; max-width:100%;}
 
-.alert{padding:.5rem; border-radius:8px; margin-bottom:.5rem; transition:0.2s;}
+.alert{padding:.5rem; border-radius:8px; margin-bottom:.5rem; transition:0.2s; word-break:break-word;}
 .alert-severe{background:var(--alert-severe);color:#000;}
 .alert-warning{background:var(--alert-warning);color:#000;}
 .alert-info{background:var(--alert-info);color:#000;}
@@ -93,10 +94,20 @@ canvas{width:100% !important; height:200px !important;}
 
 @media(max-width:900px){
   header{flex-direction:column; align-items:center;}
-  .logo{margin-left:-5%;} /* MOBILE LOGO SHIFTED 5% LEFT */
+  .logo{margin-left:0;} 
   nav{justify-content:center;}
-  .search{margin-left:0;margin-top:1rem;}
+  .search{margin-left:0;margin-top:1rem; width:100%; max-width:250px;}
   .current{flex-direction:column; align-items:flex-start;}
+  .hourly{gap:0.5rem;}
+  .temp{font-size:2.5rem;}
+}
+
+@media(max-width:500px){
+  .dashboard{padding:6rem 0.5rem 1rem 0.5rem;}
+  nav{gap:0.5rem; font-size:0.9rem;}
+  .hour{min-width:70px;}
+  canvas{height:150px !important;}
+  #map{height:300px;}
 }
 </style>
 </head>
@@ -140,14 +151,14 @@ const scrollBtn=document.getElementById("scrollTop");
 window.onscroll=()=>scrollBtn.style.display=(window.scrollY>150)?"block":"none";
 scrollBtn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
 
-// --- LOGO FLICKER ---
+// LOGO FLICKER
 const logoLink=document.querySelector(".logo"), logoPath=document.querySelector(".logo svg path");
 function flicker(){logoPath.setAttribute("fill","#f87171"); setTimeout(()=>logoPath.setAttribute("fill","#6366f1"),200);}
 logoLink.addEventListener("mouseenter",flicker); 
 logoLink.addEventListener("click",()=>{flicker();document.getElementById("top").scrollIntoView({behavior:"smooth"});});
 
-// --- MAP ---
-const map=L.map("map").setView([lat,lon],6);
+// MAP & LAYERS
+const map=L.map("map",{gestureHandling:true}).setView([lat,lon],6);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(map);
 const marker=L.marker([lat,lon]).addTo(map);
 const radarTile=L.tileLayer('https://tilecache.rainviewer.com/v2/radar/256/{z}/{x}/{y}/0/1_1.png',{opacity:0.5}).addTo(map);
@@ -166,7 +177,7 @@ function getWeatherIcon(code){
   return "❔";
 }
 
-// --- FETCH ALL SECTIONS ---
+// FETCH DATA
 async function fetchCurrent(){ 
   try{
     const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`);
@@ -238,7 +249,7 @@ function renderCharts(d){
   window.precipChart=new Chart(document.getElementById("precipChart").getContext("2d"),{type:"bar",data:{labels,datasets:[{label:"Precipitation",data:prec,backgroundColor:"rgba(248,113,113,0.6)"}]},options:{responsive:true,maintainAspectRatio:false}});
 }
 
-// --- SEARCH ---
+// SEARCH
 document.getElementById("search").addEventListener("keypress",async e=>{
   if(e.key==="Enter"){
     const city=e.target.value;
@@ -252,14 +263,13 @@ document.getElementById("search").addEventListener("keypress",async e=>{
   }
 });
 
-// --- TEMP TOGGLE ---
+// TEMP TOGGLE
 document.getElementById("temp").addEventListener("click",()=>{isFahrenheit=!isFahrenheit; loadAll();});
 
-// --- LOAD ALL ---
+// LOAD ALL
 function loadAll(){
   fetchCurrent(); fetchHourly(); fetchWeekly(); fetchAlerts();
 }
-
 loadAll();
 setInterval(loadAll,600000);
 </script>
