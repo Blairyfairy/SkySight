@@ -185,18 +185,48 @@ function flicker(){logoPath.setAttribute("fill","#f87171"); setTimeout(()=>logoP
 logoLink.addEventListener("mouseenter",flicker);
 
 // === MAP SETUP ===
-const map=L.map("map",{minZoom:2,maxZoom:10}).setView([lat,lon],5); // zoom out to prevent Leaflet warnings
+const map=L.map("map",{minZoom:2,maxZoom:10}).setView([36.1699, -115.1398],4); // Always start Las Vegas, wider zoom for US
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(map);
 
 let markers = [];
 
-// Predefined locations
+// Expanded list of major cities (~35)
 const locations = [
-  { name: "Las Vegas, NV", lat: 36.1699, lon: -115.1398 },
   { name: "New York, NY", lat: 40.7128, lon: -74.0060 },
+  { name: "Los Angeles, CA", lat: 34.0522, lon: -118.2437 },
   { name: "Chicago, IL", lat: 41.8781, lon: -87.6298 },
+  { name: "Houston, TX", lat: 29.7604, lon: -95.3698 },
+  { name: "Phoenix, AZ", lat: 33.4484, lon: -112.0740 },
+  { name: "Philadelphia, PA", lat: 39.9526, lon: -75.1652 },
+  { name: "San Antonio, TX", lat: 29.4241, lon: -98.4936 },
+  { name: "San Diego, CA", lat: 32.7157, lon: -117.1611 },
+  { name: "Dallas, TX", lat: 32.7767, lon: -96.7970 },
+  { name: "San Jose, CA", lat: 37.3382, lon: -121.8863 },
+  { name: "Austin, TX", lat: 30.2672, lon: -97.7431 },
+  { name: "Jacksonville, FL", lat: 30.3322, lon: -81.6557 },
+  { name: "Fort Worth, TX", lat: 32.7555, lon: -97.3308 },
+  { name: "Columbus, OH", lat: 39.9612, lon: -82.9988 },
+  { name: "Charlotte, NC", lat: 35.2271, lon: -80.8431 },
   { name: "San Francisco, CA", lat: 37.7749, lon: -122.4194 },
-  { name: "Miami, FL", lat: 25.7617, lon: -80.1918 },
+  { name: "Indianapolis, IN", lat: 39.7684, lon: -86.1581 },
+  { name: "Seattle, WA", lat: 47.6062, lon: -122.3321 },
+  { name: "Denver, CO", lat: 39.7392, lon: -104.9903 },
+  { name: "Washington, DC", lat: 38.9072, lon: -77.0369 },
+  { name: "Boston, MA", lat: 42.3601, lon: -71.0589 },
+  { name: "El Paso, TX", lat: 31.7619, lon: -106.4850 },
+  { name: "Nashville, TN", lat: 36.1627, lon: -86.7816 },
+  { name: "Detroit, MI", lat: 42.3314, lon: -83.0458 },
+  { name: "Oklahoma City, OK", lat: 35.4676, lon: -97.5164 },
+  { name: "Portland, OR", lat: 45.5051, lon: -122.6750 },
+  { name: "Las Vegas, NV", lat: 36.1699, lon: -115.1398 },
+  { name: "Memphis, TN", lat: 35.1495, lon: -90.0490 },
+  { name: "Louisville, KY", lat: 38.2527, lon: -85.7585 },
+  { name: "Baltimore, MD", lat: 39.2904, lon: -76.6122 },
+  { name: "Milwaukee, WI", lat: 43.0389, lon: -87.9065 },
+  { name: "Albuquerque, NM", lat: 35.0844, lon: -106.6504 },
+  { name: "Tucson, AZ", lat: 32.2226, lon: -110.9747 },
+  { name: "Fresno, CA", lat: 36.7378, lon: -119.7871 },
+  { name: "Sacramento, CA", lat: 38.5816, lon: -121.4944 }
 ];
 
 // Add markers function
@@ -223,12 +253,14 @@ async function addRadar(){
   try{
     const resp = await fetch("https://api.rainviewer.com/public/weather-maps.json");
     const json = await resp.json();
-    const radar = json.radar[json.radar.length-1]; // latest radar frame
-    if(radarLayer) map.removeLayer(radarLayer);
-    radarLayer=L.tileLayer(`https://tilecache.rainviewer.com${radar.path}/{z}/{x}/{y}/2/1_1.png`,{opacity:0.5}).addTo(map);
+    if(json.radar && json.radar.length>0){
+      const radar = json.radar[json.radar.length-1]; // latest radar frame
+      if(radarLayer) map.removeLayer(radarLayer);
+      radarLayer=L.tileLayer(`https://tilecache.rainviewer.com${radar.path}/{z}/{x}/{y}/2/1_1.png`,{opacity:0.5}).addTo(map);
+    }
   }catch(e){console.warn("Radar load failed",e);}
 }
-addRadar(); 
+addRadar();
 setInterval(addRadar,300000);
 
 // === HELPERS ===
