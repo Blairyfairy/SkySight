@@ -304,9 +304,10 @@ async function fetchHourly(){
 
 async function fetchWeekly(){
   try{
-    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`);
-    const d=await res.json(), c=document.getElementById("weekly-forecast");
+    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset&timezone=auto`);
+    const d=await res.json(), c=document.getElementById("weekly-forecast"), details=document.getElementById("details-content");
     c.innerHTML="";
+    details.innerHTML=""; // clear previous
     for(let i=0;i<7;i++){
       const day=document.createElement("div"); day.className="day";
       day.innerHTML=`<p>${new Date(d.daily.time[i]).toLocaleDateString(undefined,{weekday:'short'})}</p>
@@ -314,10 +315,20 @@ async function fetchWeekly(){
                      <p>${isFahrenheit?cToF(d.daily.temperature_2m_max[i]):d.daily.temperature_2m_max[i]}°/${isFahrenheit?cToF(d.daily.temperature_2m_min[i]):d.daily.temperature_2m_min[i]}°</p>`;
       c.appendChild(day);
     }
+    // Populate Details section for the first day as example
+    details.innerHTML=`<p>Sunrise: ${new Date(d.daily.sunrise[0]).toLocaleTimeString()}</p>
+                       <p>Sunset: ${new Date(d.daily.sunset[0]).toLocaleTimeString()}</p>
+                       <p>Max Temp: ${isFahrenheit?cToF(d.daily.temperature_2m_max[0]):d.daily.temperature_2m_max[0]}°</p>
+                       <p>Min Temp: ${isFahrenheit?cToF(d.daily.temperature_2m_min[0]):d.daily.temperature_2m_min[0]}°</p>`;
   }catch{document.getElementById("weekly-forecast").textContent="Weekly load failed";}
 }
 
-async function fetchAlerts(){document.getElementById("alerts-content").textContent="No alerts at this time.";}
+async function fetchAlerts(){
+  try{
+    // For demo: no actual alerts API, so placeholder
+    document.getElementById("alerts-content").textContent="No alerts at this time.";
+  }catch{document.getElementById("alerts-content").textContent="Failed loading alerts";}
+}
 
 // === CHARTS ===
 function renderCharts(d){
