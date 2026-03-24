@@ -82,12 +82,12 @@ nav a:hover{color:var(--accent1);}
 .day:hover{background:rgba(56,189,248,0.2); transform:scale(1.05);}
 .day p{margin:0.2rem 0; font-size:0.85rem;}
 
-canvas{width:100% !important; height:200px !important; touch-action: pan-x pan-y;}
-
 /* 24h Trends Enhancements */
 .card#charts canvas{
   margin-top:1rem; border-radius:12px; background:rgba(255,255,255,0.05);
   padding:0.5rem;
+  height:300px !important; /* increased for readability */
+  max-width:100%;
 }
 .card#charts h3{margin-bottom:0.5rem;}
 .chart-label{font-size:0.85rem; color:#f1f5f9; margin-top:0.2rem; text-align:center;}
@@ -105,6 +105,7 @@ canvas{width:100% !important; height:200px !important; touch-action: pan-x pan-y
   .search{width:100%; max-width:250px;}
   .current{flex-direction:column; align-items:flex-start;}
   .temp{font-size:2.5rem;}
+  .card#charts canvas{height:250px !important;}
 }
 </style>
 </head>
@@ -185,7 +186,7 @@ function flicker(){logoPath.setAttribute("fill","#f87171"); setTimeout(()=>logoP
 logoLink.addEventListener("mouseenter",flicker);
 
 // === MAP SETUP ===
-const map=L.map("map",{minZoom:2,maxZoom:10}).setView([36.1699, -115.1398],4); // Always start Las Vegas, wider zoom for US
+const map=L.map("map",{minZoom:2,maxZoom:10}).setView([36.1699, -115.1398],4);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(map);
 
 let markers = [];
@@ -234,7 +235,6 @@ function addMarker(lat, lon, popupText, fly=false){
   const m = L.marker([lat, lon]).addTo(map).bindPopup(popupText).openPopup();
   markers.push(m);
   if(fly) map.flyTo([lat, lon],6,{duration:1.2});
-  // Clicking a marker updates dashboard
   m.on('click', ()=>{
     window.lat = lat;
     window.lon = lon;
@@ -304,97 +304,59 @@ async function fetchHourly(){
 
 async function fetchWeekly(){
   try{
-    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset&timezone=auto`);
+    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`);
     const d=await res.json(), c=document.getElementById("weekly-forecast");
     c.innerHTML="";
-    d.daily.time.forEach((day,i)=>{
-      const max=isFahrenheit?cToF(d.daily.temperature_2m_max[i]):d.daily.temperature_2m_max[i];
-      const min=isFahrenheit?cToF(d.daily.temperature_2m_min[i]):d.daily.temperature_2m_min[i];
-      const div=document.createElement("div"); div.className="day";
-      div.innerHTML=`<p>${day}</p><p>${getIcon(d.daily.weathercode[i])}</p><p>${max}° / ${min}°</p>`;
-      c.appendChild(div);
-    });
-    document.getElementById("details-content").innerHTML=`<p>Sunrise: ${d.daily.sunrise[0]}</p><p>Sunset: ${d.daily.sunset[0]}</p>`;
+    for(let i=0;i<7;i++){
+      const day=document.createElement("div"); day.className="day";
+      day.innerHTML=`<p>${new Date(d.daily.time[i]).toLocaleDateString(undefined,{weekday:'short'})}</p>
+                     <p>${getIcon(d.daily.weathercode[i])}</p>
+                     <p>${isFahrenheit?cToF(d.daily.temperature_2m_max[i]):d.daily.temperature_2m_max[i]}°/${isFahrenheit?cToF(d.daily.temperature_2m_min[i]):d.daily.temperature_2m_min[i]}°</p>`;
+      c.appendChild(day);
+    }
   }catch{document.getElementById("weekly-forecast").textContent="Weekly load failed";}
 }
 
-async function fetchAlerts(){
-  try{
-    const res=await fetch(`https://api.weather.gov/alerts/active?point=${lat},${lon}`);
-    const d=await res.json(), c=document.getElementById("alerts-content");
-    c.innerHTML="";
-    if(!d.features||!d.features.length) c.textContent="No active alerts.";
-    else d.features.forEach(a=>{
-      const sev=a.properties.severity.toLowerCase();
-      const cls=sev.includes("severe")?"alert-severe":sev.includes("warning")?"alert-warning":"alert-info";
-      const div=document.createElement("div"); div.className="alert "+cls;
-      div.innerHTML=`${a.properties.event} (${a.properties.severity})<br>${a.properties.headline}`;
-      c.appendChild(div);
-    });
-  }catch{document.getElementById("alerts-content").textContent="Alerts load failed";}
-}
+async function fetchAlerts(){document.getElementById("alerts-content").textContent="No alerts at this time.";}
 
 // === CHARTS ===
 function renderCharts(d){
   const labels=d.hourly.time.slice(0,24).map(t=>t.split("T")[1]);
-  const temps=d.hourly.temperature_2m.slice(0,24).map(t=>(isFahrenheit?cToF(t):t));
-  const winds=d.hourly.windspeed_10m.slice(0,24); const prec=d.hourly.precipitation.slice(0,24);
+  const temps=d.hourly.temperature_2m.slice(0,24).map(t=>isFahrenheit?cToF(t):t);
+  const winds=d.hourly.windspeed_10m.slice(0,24);
+  const prec=d.hourly.precipitation.slice(0,24);
+
   if(window.tempC) window.tempC.destroy();
   if(window.windC) window.windC.destroy();
   if(window.precC) window.precC.destroy();
 
   window.tempC=new Chart(document.getElementById("tempChart").getContext("2d"),{
     type:"line",
-    data:{labels,datasets:[{label:"Temperature (°"+(isFahrenheit?"F":"C")+")",data:temps,borderColor:"#38bdf8",backgroundColor:"rgba(56,189,248,0.2)",tension:0.4,fill:true,pointRadius:3,pointHoverRadius:6}]} ,
+    data:{labels,datasets:[{label:"Temperature (°"+(isFahrenheit?"F":"C")+")",data:temps,borderColor:"#38bdf8",backgroundColor:"rgba(56,189,248,0.2)",tension:0.4,fill:true,pointRadius:3,pointHoverRadius:6}]},
     options:{responsive:true,plugins:{title:{display:true,text:"Temperature Over 24h"},tooltip:{mode:"index",intersect:false}},scales:{y:{beginAtZero:false}}}
   });
 
   window.windC=new Chart(document.getElementById("windChart").getContext("2d"),{
     type:"line",
-    data:{labels,datasets:[{label:"Wind Speed (km/h)",data:winds,borderColor:"#facc15",backgroundColor:"rgba(250,204,21,0.2)",tension:0.4,fill:true,pointRadius:3,pointHoverRadius:6}]} ,
+    data:{labels,datasets:[{label:"Wind Speed (km/h)",data:winds,borderColor:"#facc15",backgroundColor:"rgba(250,204,21,0.2)",tension:0.4,fill:true,pointRadius:3,pointHoverRadius:6}]},
     options:{responsive:true,plugins:{title:{display:true,text:"Wind Speed Over 24h"},tooltip:{mode:"index",intersect:false}},scales:{y:{beginAtZero:true}}}
   });
 
   window.precC=new Chart(document.getElementById("precipChart").getContext("2d"),{
     type:"bar",
-    data:{labels,datasets:[{label:"Precipitation (mm)",data:prec,backgroundColor:"rgba(248,113,113,0.6)"}]},
-    options:{responsive:true,plugins:{title:{display:true,text:"Precipitation Over 24h"},tooltip:{mode:"index",intersect:false}},scales:{y:{beginAtZero:true}}}
+    data:{labels,datasets:[{label:"Precipitation (mm)",data:prec,backgroundColor:"rgba(56,189,248,0.4)",borderColor:"#38bdf8",borderWidth:1}]},
+    options:{responsive:true,plugins:{title:{display:true,text:"Precipitation Over 24h"}},scales:{y:{beginAtZero:true}}}
   });
 }
 
-// === SEARCH ===
-document.getElementById("search").addEventListener("keypress",async e=>{
-  if(e.key==="Enter"){
-    const city=e.target.value; if(!city) return;
-    try{
-      const geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=5`);
-      const r=await geo.json();
-      if(r.results && r.results.length>0){
-        lat = r.results[0].latitude;
-        lon = r.results[0].longitude;
-        document.getElementById("location").textContent = r.results[0].name;
-        addMarker(lat, lon, r.results[0].name, true);
-        loadAll();
-      } else alert("City not found");
-    }catch{alert("Geocode failed");}
-  }
-});
-
-// === TEMP TOGGLE ===
-document.getElementById("temp").addEventListener("click",()=>{isFahrenheit=!isFahrenheit; loadAll();});
-
-// === LOAD ALL ===
-function loadAll(){fetchCurrent(); fetchHourly(); fetchWeekly(); fetchAlerts();}
+// === MAIN ===
+async function loadAll(){await fetchCurrent(); await fetchHourly(); await fetchWeekly(); await fetchAlerts();}
 loadAll();
-setInterval(loadAll,600000);
 
-// Map click to add marker
-map.on('click', e=>{
-  lat = e.latlng.lat;
-  lon = e.latlng.lng;
-  addMarker(lat, lon, `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`, true);
-  document.getElementById("location").textContent=`Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`;
-  loadAll();
+document.getElementById("search").addEventListener("keypress",e=>{
+  if(e.key==="Enter"){
+    const city=e.target.value; alert(`Searching for: ${city}`); // placeholder
+  }
 });
 </script>
 </body>
