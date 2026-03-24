@@ -74,9 +74,13 @@ nav a:hover{color:var(--accent1);}
 .hour{min-width:80px; text-align:center; transition:0.2s; flex-shrink:0;}
 .hour:hover{transform:scale(1.1);}
 
-.week{display:flex; flex-direction:column; gap:.5rem;}
-.day{display:flex; justify-content:space-between; align-items:center; transition:0.2s;}
-.day:hover{background:rgba(255,255,255,0.05);border-radius:8px;padding:0.2rem;}
+.week{display:flex; flex-direction:row; gap:1rem; overflow-x:auto; padding:0.5rem 0;}
+.day{
+  flex:0 0 auto; width:100px; background:rgba(255,255,255,0.05); border-radius:12px;
+  padding:0.5rem; text-align:center; transition:0.2s; cursor:pointer;
+}
+.day:hover{background:rgba(56,189,248,0.2); transform:scale(1.05);}
+.day p{margin:0.2rem 0; font-size:0.85rem;}
 
 canvas{width:100% !important; height:200px !important; touch-action: pan-x pan-y;}
 
@@ -147,7 +151,13 @@ logoLink.addEventListener("mouseenter",flicker);
 // === MAP SETUP ===
 const map=L.map("map").setView([lat,lon],6);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(map);
-let marker=L.marker([lat,lon]).addTo(map);
+let markers = [];
+function addMarker(lat, lon, popupText){
+  const m = L.marker([lat, lon]).addTo(map).bindPopup(popupText).openPopup();
+  markers.push(m);
+  return m;
+}
+let mainMarker = addMarker(lat, lon, "Las Vegas, NV");
 
 // Radar animations (RainViewer)
 let radarLayer;
@@ -206,7 +216,7 @@ async function fetchWeekly(){
       const max=isFahrenheit?cToF(d.daily.temperature_2m_max[i]):d.daily.temperature_2m_max[i];
       const min=isFahrenheit?cToF(d.daily.temperature_2m_min[i]):d.daily.temperature_2m_min[i];
       const div=document.createElement("div"); div.className="day";
-      div.innerHTML=`${day}: ${max}° / ${min}° ${getIcon(d.daily.weathercode[i])}`;
+      div.innerHTML=`<p>${day}</p><p>${getIcon(d.daily.weathercode[i])}</p><p>${max}° / ${min}°</p>`;
       c.appendChild(div);
     });
     document.getElementById("details-content").innerHTML=`<p>Sunrise: ${d.daily.sunrise[0]}</p><p>Sunset: ${d.daily.sunset[0]}</p>`;
@@ -242,23 +252,21 @@ function renderCharts(d){
   window.precC=new Chart(document.getElementById("precipChart").getContext("2d"),{type:"bar",data:{labels,datasets:[{label:"Precip",data:prec,backgroundColor:"rgba(248,113,113,0.6)"}]}});  
 }
 
-// === SEARCH ===
+// === SEARCH & MAP MULTIPLE LOCATIONS ===
 document.getElementById("search").addEventListener("keypress",async e=>{
   if(e.key==="Enter"){
     const city=e.target.value; if(!city) return;
     try{
-      const geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
+      const geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=5`);
       const r=await geo.json();
-      if(r.results&&r.results.length>0){
-        lat=r.results[0].latitude; lon=r.results[0].longitude;
-        document.getElementById("location").textContent=r.results[0].name;
-
-        // === EDITED MAP FLY & MARKER ===
-        map.flyTo([lat, lon], 8, {duration: 1.2});
-        marker.setLatLng([lat, lon]).bindPopup(r.results[0].name).openPopup();
-
+      if(r.results && r.results.length>0){
+        lat = r.results[0].latitude;
+        lon = r.results[0].longitude;
+        document.getElementById("location").textContent = r.results[0].name;
+        const m = addMarker(lat, lon, r.results[0].name);
+        map.flyTo([lat, lon], 6, {duration: 1.2});
         loadAll();
-      }else alert("City not found");
+      } else alert("City not found");
     }catch{alert("Geocode failed");}
   }
 });
@@ -270,6 +278,15 @@ document.getElementById("temp").addEventListener("click",()=>{isFahrenheit=!isFa
 function loadAll(){fetchCurrent(); fetchHourly(); fetchWeekly(); fetchAlerts();}
 loadAll();
 setInterval(loadAll,600000);
+
+// Map click to add marker without zoom warnings
+map.on('click', e=>{
+  lat = e.latlng.lat;
+  lon = e.latlng.lng;
+  const m = addMarker(lat, lon, `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`);
+  document.getElementById("location").textContent=`Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`;
+  loadAll();
+});
 </script>
 </body>
 </html>
