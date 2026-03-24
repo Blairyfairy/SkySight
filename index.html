@@ -146,26 +146,31 @@ canvas{width:100% !important; height:200px !important; touch-action: pan-x pan-y
 </div>
 
 <script>
+// --- Globals ---
 let lat=36.1699, lon=-115.1398, isFahrenheit=true;
 const scrollBtn=document.getElementById("scrollTop");
+
+// --- Scroll Top Button ---
 window.onscroll=()=>scrollBtn.style.display=(window.scrollY>150)?"block":"none";
 scrollBtn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
 
-// LOGO FLICKER
+// --- Logo Flicker ---
 const logoLink=document.querySelector(".logo"), logoPath=document.querySelector(".logo svg path");
 function flicker(){logoPath.setAttribute("fill","#f87171"); setTimeout(()=>logoPath.setAttribute("fill","#6366f1"),200);}
 logoLink.addEventListener("mouseenter",flicker); 
 logoLink.addEventListener("click",()=>{flicker();document.getElementById("top").scrollIntoView({behavior:"smooth"});});
 
-// MAP & LAYERS
-const map=L.map("map",{gestureHandling:true}).setView([lat,lon],6);
+// --- Map ---
+const map=L.map("map").setView([lat,lon],6);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(map);
 const marker=L.marker([lat,lon]).addTo(map);
-const radarTile=L.tileLayer('https://tilecache.rainviewer.com/v2/radar/256/{z}/{x}/{y}/0/1_1.png',{opacity:0.5}).addTo(map);
+
+// Wind Layer from GitHub (CORS safe)
 const windLayer=L.velocityLayer({displayValues:true,data:null,maxVelocity:15}).addTo(map);
 fetch("https://raw.githubusercontent.com/danwild/leaflet-velocity/master/example/earth-wind.json")
-.then(r=>r.json()).then(d=>windLayer.setData(d));
+.then(r=>r.json()).then(d=>windLayer.setData(d)).catch(()=>console.log("Wind data failed"));
 
+// --- Helper Functions ---
 function cToF(c){return Math.round((c*9/5)+32);}
 function getWeatherIcon(code){
   if([0].includes(code)) return "☀️";
@@ -177,7 +182,7 @@ function getWeatherIcon(code){
   return "❔";
 }
 
-// FETCH DATA
+// --- Fetch Functions ---
 async function fetchCurrent(){ 
   try{
     const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`);
@@ -191,14 +196,17 @@ async function fetchCurrent(){
 async function fetchHourly(){ 
   try{
     const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode,windspeed_10m,precipitation&timezone=auto`);
-    const data=await res.json(); const c=document.getElementById("hourly"); c.innerHTML="";
+    const data=await res.json(); 
+    const c=document.getElementById("hourly"); 
+    c.innerHTML="";
     data.hourly.time.slice(0,24).forEach((t,i)=>{
       const temp=isFahrenheit?cToF(data.hourly.temperature_2m[i]):data.hourly.temperature_2m[i];
       const wind=data.hourly.windspeed_10m[i];
       const precip=data.hourly.precipitation[i];
       const icon=getWeatherIcon(data.hourly.weathercode[i]);
       const div=document.createElement("div"); div.className="hour";
-      div.innerHTML=`${t.split("T")[1]}<br>${icon}<br>${temp}°<br>💨${wind} km/h<br>☔${precip} mm`; c.appendChild(div);
+      div.innerHTML=`${t.split("T")[1]}<br>${icon}<br>${temp}°<br>💨${wind} km/h<br>☔${precip} mm`; 
+      c.appendChild(div);
     });
     renderCharts(data);
   }catch{document.getElementById("hourly").textContent="Failed to load";}
@@ -207,7 +215,9 @@ async function fetchHourly(){
 async function fetchWeekly(){
   try{
     const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset&timezone=auto`);
-    const data=await res.json(); const c=document.getElementById("weekly-forecast"); c.innerHTML="";
+    const data=await res.json(); 
+    const c=document.getElementById("weekly-forecast"); 
+    c.innerHTML="";
     data.daily.time.forEach((day,i)=>{
       const max=isFahrenheit?cToF(data.daily.temperature_2m_max[i]):data.daily.temperature_2m_max[i];
       const min=isFahrenheit?cToF(data.daily.temperature_2m_min[i]):data.daily.temperature_2m_min[i];
@@ -224,7 +234,9 @@ async function fetchWeekly(){
 async function fetchAlerts(){
   try{
     const res=await fetch(`https://api.weather.gov/alerts/active?point=${lat},${lon}`);
-    const data=await res.json(); const c=document.getElementById("alerts-content"); c.innerHTML="";
+    const data=await res.json(); 
+    const c=document.getElementById("alerts-content"); 
+    c.innerHTML="";
     if(!data.features.length)c.textContent="No active alerts.";
     else data.features.forEach(a=>{
       const sev=a.properties.severity.toLowerCase();
@@ -233,9 +245,10 @@ async function fetchAlerts(){
       div.innerHTML=`${a.properties.event} (${a.properties.severity})<br>${a.properties.headline}`;
       c.appendChild(div);
     });
-  }catch{document.getElementById("alerts-content").textContent="Failed to load";}
+  }catch{document.getElementById("alerts-content").textContent="No alerts for this location";}
 }
 
+// --- Charts ---
 function renderCharts(d){
   const labels=d.hourly.time.slice(0,24).map(t=>t.split("T")[1]);
   const temps=d.hourly.temperature_2m.slice(0,24).map(t=>isFahrenheit?cToF(t):t);
@@ -249,27 +262,29 @@ function renderCharts(d){
   window.precipChart=new Chart(document.getElementById("precipChart").getContext("2d"),{type:"bar",data:{labels,datasets:[{label:"Precipitation",data:prec,backgroundColor:"rgba(248,113,113,0.6)"}]},options:{responsive:true,maintainAspectRatio:false}});
 }
 
-// SEARCH
+// --- Search ---
 document.getElementById("search").addEventListener("keypress",async e=>{
   if(e.key==="Enter"){
     const city=e.target.value;
-    const geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
-    const g=await geo.json();
-    if(g.results){lat=g.results[0].latitude; lon=g.results[0].longitude;
-      document.getElementById("location").textContent=g.results[0].name;
-      map.setView([lat,lon],8); marker.setLatLng([lat,lon]);
-      loadAll(); 
-    } else {alert("City not found");}
+    if(!city) return;
+    try{
+      const geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}`);
+      const g=await geo.json();
+      if(g.results && g.results.length>0){
+        lat=g.results[0].latitude; lon=g.results[0].longitude;
+        document.getElementById("location").textContent=g.results[0].name;
+        map.setView([lat,lon],8); marker.setLatLng([lat,lon]);
+        loadAll();
+      } else alert("City not found");
+    }catch{alert("Geocoding failed");}
   }
 });
 
-// TEMP TOGGLE
+// --- Temp Toggle ---
 document.getElementById("temp").addEventListener("click",()=>{isFahrenheit=!isFahrenheit; loadAll();});
 
-// LOAD ALL
-function loadAll(){
-  fetchCurrent(); fetchHourly(); fetchWeekly(); fetchAlerts();
-}
+// --- Load All ---
+function loadAll(){fetchCurrent(); fetchHourly(); fetchWeekly(); fetchAlerts();}
 loadAll();
 setInterval(loadAll,600000);
 </script>
