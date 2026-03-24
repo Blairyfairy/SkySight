@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-/* KEEP ALL STYLES EXACTLY AS BEFORE */
+/* KEEP ALL YOUR ORIGINAL STYLES EXACTLY */
 :root {
   --bg-dark: linear-gradient(135deg,#0b1d33,#1e2a47,#2f3b5c);
   --glass: rgba(255,255,255,0.08);
@@ -110,7 +110,7 @@ function flicker(){logoPath.setAttribute("fill","#f87171"); setTimeout(()=>logoP
 logoLink.addEventListener("mouseenter",flicker);
 
 // --- MAP ---
-const map=L.map("map",{worldCopyJump:true}).setView([lat,lon],6);
+const map=L.map("map").setView([lat,lon],6);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(map);
 let marker=L.marker([lat,lon]).addTo(map);
 
@@ -119,18 +119,18 @@ let radarLayer;
 function updateRadar(){ const now=Math.floor(Date.now()/1000/300)*300; if(radarLayer) map.removeLayer(radarLayer); radarLayer=L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/256/{z}/{x}/{y}/${now}/0_1.png`,{opacity:0.5}).addTo(map);}
 updateRadar(); setInterval(updateRadar,300000);
 
-// --- Large city markers ---
-let cityData=[{name:"New York",lat:40.7128,lon:-74.0060},{name:"Los Angeles",lat:34.0522,lon:-118.2437},{name:"Chicago",lat:41.8781,lon:-87.6298},{name:"Houston",lat:29.7604,lon:-95.3698},{name:"Phoenix",lat:33.4484,lon:-112.0740}];
-cityData.forEach(c=>L.circleMarker([c.lat,c.lon],{radius:3,color:"#38bdf8",weight:1,fillOpacity:0.8}).bindPopup(c.name).addTo(map));
+// --- Major city markers ---
+const cities=[{name:"New York",lat:40.7128,lon:-74.0060},{name:"Los Angeles",lat:34.0522,lon:-118.2437},{name:"Chicago",lat:41.8781,lon:-87.6298},{name:"Houston",lat:29.7604,lon:-95.3698},{name:"Phoenix",lat:33.4484,lon:-112.0740}];
+cities.forEach(c=>L.circleMarker([c.lat,c.lon],{radius:3,color:"#38bdf8",weight:1,fillOpacity:0.8}).bindPopup(c.name).addTo(map));
 
-// --- Airports ---
-let airportData=[{name:"McCarran Intl",iata:"LAS",lat:36.0840,lon:-115.1537},{name:"LAX",iata:"LAX",lat:33.9416,lon:-118.4085},{name:"ORD",iata:"ORD",lat:41.9742,lon:-87.9073}];
-airportData.forEach(a=>L.circleMarker([a.lat,a.lon],{radius:4,color:"#ffdd00",weight:1,fillOpacity:0.8}).bindPopup(`${a.name} (${a.iata})`).addTo(map));
+// --- Airport markers ---
+const airports=[{name:"McCarran Intl",iata:"LAS",lat:36.0840,lon:-115.1537},{name:"LAX",iata:"LAX",lat:33.9416,lon:-118.4085},{name:"ORD",iata:"ORD",lat:41.9742,lon:-87.9073}];
+airports.forEach(a=>L.circleMarker([a.lat,a.lon],{radius:4,color:"#ffdd00",weight:1,fillOpacity:0.8}).bindPopup(`${a.name} (${a.iata})`).addTo(map));
 
 // --- Closest airport ---
 function gotoClosestAirport(lat0,lon0){
   let best=null,bestDist=Infinity;
-  airportData.forEach(a=>{
+  airports.forEach(a=>{
     const d=(lat0-a.lat)**2+(lon0-a.lon)**2;
     if(d<bestDist){bestDist=d; best=a;}
   });
@@ -140,7 +140,7 @@ function gotoClosestAirport(lat0,lon0){
 // --- TEMP TOGGLE ---
 document.getElementById("temp").addEventListener("click",()=>{isFahrenheit=!isFahrenheit; loadAll();});
 
-// --- FETCHES ---
+// --- FETCH FUNCTIONS ---
 async function fetchCurrent(){ try{ const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`); const data=await res.json(); const t=isFahrenheit?Math.round((data.current_weather.temperature*9/5)+32):data.current_weather.temperature; document.getElementById("temp").textContent=t+(isFahrenheit?"°F":"°C"); document.getElementById("desc").textContent=`Wind ${data.current_weather.windspeed} km/h`; }catch{document.getElementById("desc").textContent="Failed loading current";}}
 async function fetchHourly(){ try{ const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,weathercode,windspeed_10m,precipitation&timezone=auto`); const d=await res.json(); const c=document.getElementById("hourly"); c.innerHTML=""; d.hourly.time.slice(0,24).forEach((t,i)=>{ const temp=isFahrenheit?Math.round((d.hourly.temperature_2m[i]*9/5)+32):d.hourly.temperature_2m[i]; const wind=d.hourly.windspeed_10m[i]; const prec=d.hourly.precipitation[i]; const div=document.createElement("div"); div.className="hour"; div.innerHTML=`${t.split("T")[1]}<br>${temp}°<br>💨${wind} km/h<br>☔${prec} mm`; c.appendChild(div);}); renderCharts(d);}catch{document.getElementById("hourly").textContent="Hourly load failed";}
 async function fetchWeekly(){ try{ const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`); const d=await res.json(); const c=document.getElementById("weekly-forecast"); c.innerHTML=""; d.daily.time.forEach((day,i)=>{ const max=isFahrenheit?Math.round((d.daily.temperature_2m_max[i]*9/5)+32):d.daily.temperature_2m_max[i]; const min=isFahrenheit?Math.round((d.daily.temperature_2m_min[i]*9/5)+32):d.daily.temperature_2m_min[i]; const div=document.createElement("div"); div.className="day"; div.innerHTML=`${day}: ${max}° / ${min}°`; c.appendChild(div);}); document.getElementById("details-content").innerHTML=`<p>Sunrise: ${d.daily.sunrise[0]}</p><p>Sunset: ${d.daily.sunset[0]}</p>`;}catch{document.getElementById("weekly-forecast").textContent="Weekly load failed";}
