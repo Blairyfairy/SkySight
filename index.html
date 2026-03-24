@@ -165,10 +165,23 @@ const map=L.map("map").setView([lat,lon],6);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(map);
 const marker=L.marker([lat,lon]).addTo(map);
 
-// Wind Layer from GitHub (CORS safe)
+// Wind Layer
 const windLayer=L.velocityLayer({displayValues:true,data:null,maxVelocity:15}).addTo(map);
 fetch("https://raw.githubusercontent.com/danwild/leaflet-velocity/master/example/earth-wind.json")
 .then(r=>r.json()).then(d=>windLayer.setData(d)).catch(()=>console.log("Wind data failed"));
+
+// RainViewer Radar Overlay
+const radar = L.tileLayer('https://tilecache.rainviewer.com/v2/radar/256/{z}/{x}/{y}/{time}/0_1.png',{
+  opacity:0.5,
+  attribution:'Radar © RainViewer'
+}).addTo(map);
+
+function updateRadar(){
+  const now=Math.floor(Date.now()/1000/300)*300; // nearest 5 min
+  radar.setUrl(`https://tilecache.rainviewer.com/v2/radar/256/{z}/{x}/{y}/${now}/0_1.png`);
+}
+updateRadar();
+setInterval(updateRadar,300000); // update every 5 minutes
 
 // --- Helper Functions ---
 function cToF(c){return Math.round((c*9/5)+32);}
@@ -284,7 +297,8 @@ document.getElementById("search").addEventListener("keypress",async e=>{
 document.getElementById("temp").addEventListener("click",()=>{isFahrenheit=!isFahrenheit; loadAll();});
 
 // --- Load All ---
-function loadAll(){fetchCurrent(); fetchHourly(); fetchWeekly(); fetchAlerts();}
+function loadAll(){ fetchCurrent(); fetchHourly(); fetchWeekly(); fetchAlerts(); }
+
 loadAll();
 setInterval(loadAll,600000);
 </script>
