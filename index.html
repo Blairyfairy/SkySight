@@ -86,17 +86,13 @@ nav a:hover{color:var(--accent1);}
 .card#charts canvas{
   margin-top:1rem; border-radius:12px; background:rgba(255,255,255,0.05);
   padding:0.5rem;
-  height:400px !important; /* increased for readability */
-  min-width:800px;
+  height:300px !important; /* increased for readability */
+  max-width:100%;
 }
-.card#charts h3{margin-bottom:0.5rem; font-size:1.5rem;}
-.chart-label{font-size:1rem; color:#f1f5f9; margin-top:0.2rem; text-align:center;}
+.card#charts h3{margin-bottom:0.5rem;}
+.chart-label{font-size:0.85rem; color:#f1f5f9; margin-top:0.2rem; text-align:center;}
 
 #map{height:400px; border-radius:16px; width:100%; max-width:100%;}
-
-/* Radar map additions */
-.card#radar{overflow:hidden;}
-#radar-map{height:450px; border-radius:16px; width:100%; max-width:100%;}
 
 .alert{padding:.5rem; border-radius:8rem; margin-bottom:.5rem; transition:0.2s; word-break:break-word;}
 .alert-severe{background:var(--alert-severe);color:#000;}
@@ -109,9 +105,7 @@ nav a:hover{color:var(--accent1);}
   .search{width:100%; max-width:250px;}
   .current{flex-direction:column; align-items:flex-start;}
   .temp{font-size:2.5rem;}
-  .card#charts canvas{height:300px !important; min-width:600px;}
-  .card#charts h3{font-size:1.2rem;}
-  .chart-label{font-size:0.95rem;}
+  .card#charts canvas{height:250px !important;}
 }
 </style>
 </head>
@@ -164,12 +158,6 @@ nav a:hover{color:var(--accent1);}
   <div class="card" id="map-section">
     <h3>Interactive Map with Radar</h3>
     <div id="map"></div>
-  </div>
-
-  <!-- NEW RADAR MAP CARD -->
-  <div class="card" id="radar">
-    <h3>Doppler Radar Map</h3>
-    <div id="radar-map"></div>
   </div>
 
   <div class="card" id="details">
@@ -275,25 +263,6 @@ async function addRadar(){
 addRadar();
 setInterval(addRadar,300000);
 
-// === NEW DOPPLER RADAR MAP ===
-const radarMap = L.map("radar-map",{minZoom:2,maxZoom:10}).setView([36.1699,-115.1398],4);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{ attribution:"© OpenStreetMap" }).addTo(radarMap);
-
-let radarLayer2;
-async function updateRadar2(){
-  try{
-    const resp = await fetch("https://api.rainviewer.com/public/weather-maps.json");
-    const json = await resp.json();
-    if(json.radar && json.radar.length>0){
-      const radar = json.radar[json.radar.length-1];
-      if(radarLayer2) radarMap.removeLayer(radarLayer2);
-      radarLayer2=L.tileLayer(`https://tilecache.rainviewer.com${radar.path}/{z}/{x}/{y}/2/1_1.png`,{opacity:0.6}).addTo(radarMap);
-    }
-  }catch(e){console.warn("Radar load failed",e);}
-}
-updateRadar2();
-setInterval(updateRadar2,300000);
-
 // === HELPERS ===
 function cToF(c){return Math.round((c*9/5)+32);}
 function getIcon(code){
@@ -351,11 +320,6 @@ async function fetchWeekly(){
 async function fetchAlerts(){document.getElementById("alerts-content").textContent="No alerts at this time.";}
 
 // === CHARTS ===
-Chart.defaults.font.size=16;
-Chart.defaults.plugins.tooltip.bodyFont.size=16;
-Chart.defaults.plugins.tooltip.titleFont.size=18;
-Chart.defaults.plugins.legend.labels.font.size=16;
-
 function renderCharts(d){
   const labels=d.hourly.time.slice(0,24).map(t=>t.split("T")[1]);
   const temps=d.hourly.temperature_2m.slice(0,24).map(t=>isFahrenheit?cToF(t):t);
