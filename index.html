@@ -154,7 +154,7 @@ nav a:hover{color:var(--accent1);}
   );
 }
 
-/* SCROLL TO TOP BUTTON - PROFESSIONAL CIRCLE, NO FOG */
+/* SCROLL TO TOP BUTTON - TRANSPARENT CIRCLE, NO FOG */
 #scrollTop {
   position: fixed;
   bottom: 20px;
@@ -163,8 +163,8 @@ nav a:hover{color:var(--accent1);}
   height: 50px;            /* perfect circle */
   border-radius: 50%;      /* true circle */
   border: none;
-  background: var(--accent1); /* primary neon color */
-  color: var(--text);         /* white arrow */
+  background: transparent; /* fully invisible background */
+  color: var(--accent1);   /* neon arrow color */
   font-size: 1.6rem;
   cursor: pointer;
   z-index: 999;
@@ -174,19 +174,20 @@ nav a:hover{color:var(--accent1);}
   justify-content: center;
   align-items: center;
 
-  /* subtle shadow only, no fog */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  /* subtle shadow for arrow visibility only */
+  text-shadow: 0 0 6px var(--accent1);
 
-  transition: transform 0.2s, background 0.2s;
+  transition: transform 0.2s, color 0.2s;
 }
 
 /* Hover effect */
 #scrollTop:hover {
-  background: var(--accent2); /* secondary neon color */
+  color: var(--accent2); /* secondary neon color on hover */
   transform: scale(1.1);
+  text-shadow: 0 0 12px var(--accent2);
 }
 
-/* Mobile override: keep perfect circle and same scale */
+/* Mobile override: keep circle and scale */
 @media (max-width: 900px) {
   #scrollTop {
     width: 45px;
