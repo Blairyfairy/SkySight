@@ -173,6 +173,7 @@ nav a:hover{color:var(--accent1);}
 /* DASHBOARD */
 .dashboard{
   display:flex;
+  padding-top: var(--header-height, 6rem); /* fallback to desktop default */
   padding-top: 10rem; /* was 6rem on desktop, increase for mobile header height */
   padding-top: calc(100px + 1rem); /* 100px = approximate mobile header height */
   flex-direction:column;
@@ -701,6 +702,17 @@ document.getElementById("search").addEventListener("keypress",e=>{
     const city=e.target.value; alert(`Searching for: ${city}`); // placeholder
   }
 });
+function updateDashboardPadding() {
+  const header = document.querySelector('header');
+  const dashboard = document.querySelector('.dashboard');
+  const headerHeight = header.offsetHeight; // real height
+  dashboard.style.paddingTop = headerHeight + 'px';
+}
+
+// run on load and on resize
+window.addEventListener('load', updateDashboardPadding);
+window.addEventListener('resize', updateDashboardPadding);
+  
 </script>
 </body>
 </html>
