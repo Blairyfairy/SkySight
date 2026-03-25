@@ -155,25 +155,44 @@ nav a:hover{color:var(--accent1);}
 }
 
 /* SCROLL TO TOP BUTTON FIXED CIRCLE & DOUBLE CHEVRON */
+/* SCROLL TO TOP BUTTON */
 #scrollTop {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 50px;           /* force square for perfect circle */
-  height: 50px;          /* force square */
-  background: var(--accent1);
-  color: #fff;
+  width: 50px;               /* fixed square for circle */
+  height: 50px;
+  background: var(--accent1); /* logo color only */
+  color: var(--text);         /* white arrow */
   border: none;
-  border-radius: 50%;    /* perfect circle */
-  font-size: 1.5rem;
+  border-radius: 50%;         /* perfect circle */
+  font-size: 1.6rem;          /* fits well in circle */
   display: none;
   cursor: pointer;
   z-index: 999;
+
+  /* center arrow perfectly */
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+
+  /* subtle shadow */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   transition: transform 0.2s, background 0.2s;
+}
+
+#scrollTop:hover {
+  background: var(--accent2); /* logo secondary color */
+  transform: scale(1.1);
+}
+
+/* MOBILE OVERRIDE */
+@media (max-width: 900px) {
+  #scrollTop {
+    width: 45px;
+    height: 45px;
+    font-size: 1.4rem;
+  }
 }
 
 #scrollTop {
@@ -491,7 +510,7 @@ nav a:hover{color:var(--accent1);}
   <input id="search" class="search" placeholder="Search city...">
 </header>
 
-<button id="scrollTop">&#187;</button>
+<button id="scrollTop">&#x25B2;</button>
 
 <div id="top" class="dashboard">
   <div class="card current" id="current">
