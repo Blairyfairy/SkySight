@@ -154,37 +154,35 @@ nav a:hover{color:var(--accent1);}
   );
 }
 
-/* SCROLL TO TOP BUTTON - CRYSTAL CLEAN */
+/* SCROLL TO TOP BUTTON - PURE CLEAN */
 #scrollTop {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 50px;             /* perfect circle */
-  height: 50px;            /* perfect circle */
-  border-radius: 50%;      /* true circle */
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;       /* perfect circle */
   border: none;
-  background: transparent; /* no background at all */
-  color: var(--accent1);   /* neon arrow color */
+  background: transparent;  /* fully invisible background */
+  color: var(--accent1);    /* arrow color */
   font-size: 1.6rem;
   cursor: pointer;
   z-index: 999;
 
-  /* center arrow */
+  /* center arrow perfectly */
   display: flex;
   justify-content: center;
   align-items: center;
 
-  /* subtle neon glow only on the arrow */
-  text-shadow: 0 0 6px var(--accent1);
-
+  /* no shadow, no blur */
+  text-shadow: none;
   transition: transform 0.2s, color 0.2s;
 }
 
 /* Hover effect */
 #scrollTop:hover {
-  color: var(--accent2); /* secondary neon color on hover */
+  color: var(--accent2);   /* subtle color change on hover */
   transform: scale(1.1);
-  text-shadow: 0 0 12px var(--accent2);
 }
 
 /* MOBILE override: keep circle and scale */
