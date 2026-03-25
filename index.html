@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-velocity/2.0.0/leaflet-velocity.min.css"/>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
 
 <style>
 :root {
@@ -89,7 +89,18 @@ header{
 }
 .logo svg{width:32px;height:32px;transition:fill 0.2s;fill:#6366f1;}
 .logo span{
-  background:linear-gradient(90deg,var(--accent1),var(--accent2));
+  font-family:'Sora',sans-serif;
+  font-weight:800;
+  letter-spacing:0.5px;
+  text-shadow: 0 0 12px rgba(56,189,248,0.25);
+  background: linear-gradient(
+    90deg,
+    var(--accent1) 0%,
+    var(--accent1) 25%,
+    var(--accent2) 55%,
+    var(--accent2) 100%
+  );
+
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
 }
