@@ -173,6 +173,8 @@ nav a:hover{color:var(--accent1);}
 /* DASHBOARD */
 .dashboard{
   display:flex;
+  padding-top: 10rem; /* was 6rem on desktop, increase for mobile header height */
+  padding-top: calc(100px + 1rem); /* 100px = approximate mobile header height */
   flex-direction:column;
   gap:1.25rem;
   padding:6rem 1rem 1rem 1rem;
