@@ -333,11 +333,63 @@ nav a:hover{color:var(--accent1);}
 
 /* MOBILE */
 @media(max-width:900px){
-  header{flex-direction:column;align-items:center;}
-  .search{width:100%;max-width:250px;}
-  .current{flex-direction:column;align-items:flex-start;}
-  .temp{font-size:2.8rem;}
-  .card#charts canvas{height:280px !important;}
+
+  /* HEADER LAYOUT */
+  header{
+    flex-direction:column;
+    align-items:center;
+    gap:0.5rem;
+  }
+
+  /* LOGO: centered, slightly left */
+  .logo{
+    display:flex;
+    justify-content:center;
+    width:100%;
+    transform:translateX(-2%);
+  }
+
+  /* NAV: single row, full width */
+  nav{
+    display:flex;
+    flex-direction:row;
+    flex-wrap:nowrap;
+    justify-content:space-between;
+    width:100%;
+    gap:0;
+    overflow:hidden;
+  }
+
+  nav a{
+    flex:1;
+    text-align:center;
+    font-size:0.75rem;
+    padding:0.25rem 0;
+    white-space:nowrap;
+  }
+
+  /* SEARCH: centered */
+  .search{
+    display:block;
+    margin:0.5rem auto 0 auto;
+    width:90%;
+    max-width:260px;
+    text-align:center;
+  }
+
+  /* KEEP EXISTING MOBILE BEHAVIOR */
+  .current{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .temp{
+    font-size:2.8rem;
+  }
+
+  .card#charts canvas{
+    height:280px !important;
+  }
 }
 </style>
 </head>
