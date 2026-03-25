@@ -154,20 +154,48 @@ nav a:hover{color:var(--accent1);}
   );
 }
 
-/* SCROLL BTN */
-#scrollTop{
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  background:var(--accent1);
-  color:#fff;
-  border:none;
-  padding:0.5rem 0.8rem;
-  border-radius:50%;
-  font-size:1.3rem;
-  cursor:pointer;
-  display:none;
-  z-index:999;
+/* SCROLL TO TOP BUTTON FIXED CIRCLE & DOUBLE CHEVRON */
+#scrollTop {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;           /* force square for perfect circle */
+  height: 50px;          /* force square */
+  background: var(--accent1);
+  color: #fff;
+  border: none;
+  border-radius: 50%;    /* perfect circle */
+  font-size: 1.5rem;
+  display: none;
+  cursor: pointer;
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  transition: transform 0.2s, background 0.2s;
+}
+
+#scrollTop {
+  transform: rotate(-90deg);
+}
+#scrollTop:hover {
+  transform: rotate(-90deg) scale(1.1);
+}
+
+#scrollTop:hover {
+  background: var(--accent2);
+  transform: scale(1.1);
+}
+
+/* MOBILE OVERRIDE: force circle, same size */
+@media (max-width: 900px) {
+  #scrollTop {
+    width: 50px;
+    height: 50px;
+    padding: 0;         /* remove padding causing oval */
+    font-size: 1.3rem;  /* adjust size for mobile */
+  }
 }
 
 /* DASHBOARD */
@@ -440,6 +468,9 @@ nav a:hover{color:var(--accent1);}
     height:280px !important;
   }
 }
+
+
+  
 </style>
 </head>
 <body>
@@ -460,7 +491,7 @@ nav a:hover{color:var(--accent1);}
   <input id="search" class="search" placeholder="Search city...">
 </header>
 
-<button id="scrollTop">&#8679;</button>
+<button id="scrollTop">&#187;</button>
 
 <div id="top" class="dashboard">
   <div class="card current" id="current">
