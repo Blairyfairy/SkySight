@@ -92,7 +92,7 @@ header{
   font-family:'Sora',sans-serif;
   font-weight:800;
   letter-spacing:0.5px;
-  text-shadow: 0 0 12px rgba(56,189,248,0.25);
+
   background: linear-gradient(
     90deg,
     var(--accent1) 0%,
@@ -103,6 +103,11 @@ header{
 
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
+
+  /* 🔥 REMOVE FOG / SOFTNESS */
+  text-shadow: none;
+  filter: none;
+  opacity:1;
 }
 
 nav{display:flex;flex-wrap:wrap;gap:1rem;margin-top:0.5rem;}
