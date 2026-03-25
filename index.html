@@ -154,39 +154,44 @@ nav a:hover{color:var(--accent1);}
   );
 }
 
-/* SCROLL TO TOP BUTTON FIXED CIRCLE & DOUBLE CHEVRON */
-/* SCROLL TO TOP BUTTON */
+/* SCROLL TO TOP BUTTON — PROFESSIONAL LOOK */
 #scrollTop {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 50px;               /* fixed square for circle */
+  width: 50px;
   height: 50px;
-  background: var(--accent1); /* logo color only */
-  color: var(--text);         /* white arrow */
+  border-radius: 50%;
   border: none;
-  border-radius: 50%;         /* perfect circle */
-  font-size: 1.6rem;          /* fits well in circle */
-  display: none;
+  background: linear-gradient(145deg, #38bdf8, #6366f1);
+  color: #f1f5f9;
+  font-size: 1.6rem;
   cursor: pointer;
   z-index: 999;
+  display: none;
 
-  /* center arrow perfectly */
+  /* Center icon */
   display: flex;
   justify-content: center;
   align-items: center;
 
-  /* subtle shadow */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  transition: transform 0.2s, background 0.2s;
+  /* Soft shadows for depth */
+  box-shadow:
+    0 6px 15px rgba(0,0,0,0.25), /* drop shadow */
+    inset 0 -2px 6px rgba(255,255,255,0.15); /* inner highlight */
+
+  transition: all 0.25s ease;
 }
 
 #scrollTop:hover {
-  background: var(--accent2); /* logo secondary color */
-  transform: scale(1.1);
+  transform: scale(1.15);
+  background: linear-gradient(145deg, #6366f1, #38bdf8);
+  box-shadow:
+    0 8px 20px rgba(0,0,0,0.35),
+    inset 0 -2px 8px rgba(255,255,255,0.25);
 }
 
-/* MOBILE OVERRIDE */
+/* Mobile override — keeps same visual style, slightly smaller */
 @media (max-width: 900px) {
   #scrollTop {
     width: 45px;
@@ -195,28 +200,14 @@ nav a:hover{color:var(--accent1);}
   }
 }
 
+/* Keep rotated arrow */
 #scrollTop {
   transform: rotate(-90deg);
 }
-#scrollTop:hover {
-  transform: rotate(-90deg) scale(1.1);
-}
 
 #scrollTop:hover {
-  background: var(--accent2);
-  transform: scale(1.1);
+  transform: rotate(-90deg) scale(1.15);
 }
-
-/* MOBILE OVERRIDE: force circle, same size */
-@media (max-width: 900px) {
-  #scrollTop {
-    width: 50px;
-    height: 50px;
-    padding: 0;         /* remove padding causing oval */
-    font-size: 1.3rem;  /* adjust size for mobile */
-  }
-}
-
 /* DASHBOARD */
 .dashboard{
   display:flex;
